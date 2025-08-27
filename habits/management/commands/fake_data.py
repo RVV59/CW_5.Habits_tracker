@@ -4,7 +4,6 @@ from faker import Faker
 from users.models import User
 from habits.models import Habit
 
-# Создаем экземпляр Faker для генерации данных
 fake = Faker('ru_RU')
 
 
@@ -16,17 +15,16 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         self.stdout.write("Начинаем очистку старых данных...")
-        # Очищаем старые данные, чтобы избежать дубликатов
         Habit.objects.all().delete()
         User.objects.filter(is_superuser=False).delete()  # Удаляем всех, кроме админов
         self.stdout.write(self.style.SUCCESS("Старые данные успешно удалены."))
 
         self.stdout.write("Создаем новых пользователей...")
         users = []
-        for _ in range(10):  # Создадим 10 пользователей
+        for _ in range(10):
             user = User.objects.create_user(
                 email=fake.email(),
-                password='password123',  # Простой пароль для всех тестовых юзеров
+                password='password123',
                 phone=fake.phone_number(),
                 city=fake.city()
             )

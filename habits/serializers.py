@@ -1,40 +1,45 @@
+
+from datetime import timedelta
 from rest_framework import serializers
-from .models import Habit
+from habits.models import Habit
+from habits.validators import (
+    validate_reward_and_related_habit,
+    validate_duration,
+    validate_related_habit_is_pleasant,
+    validate_pleasant_habit_has_no_reward_or_related,
+    validate_periodicity
+)
+
+class IntegerDurationField(serializers.DurationField):
+    """
+    Кастомное поле, которое корректно работает в обе стороны:
+    - Принимает строку "HH:MM:SS" и сохраняет в БД как Integer (секунды).
+    - Читает Integer из БД и отдает в JSON как строку "HH:MM:SS".
+    """
+    def to_representation(self, value):
+        duration_timedelta = timedelta(seconds=value)
+        return super().to_representation(duration_timedelta)
+
+    def to_internal_value(self, value):
+        duration_timedelta = super().to_internal_value(value)
+        return int(duration_timedelta.total_seconds())
 
 class HabitSerializer(serializers.ModelSerializer):
-    """Сериализатор для модели привычки."""
+    """Сериализатор для модели Habit."""
+
+    duration = IntegerDurationField(validators=[validate_duration])
+
+    user = serializers.SlugRelatedField(
+        slug_field='email',
+        read_only=True
+    )
 
     class Meta:
         model = Habit
-        fields = (
-            'id', 'place', 'time', 'action', 'is_pleasant',
-            'related_habit', 'periodicity', 'reward', 'duration', 'is_public'
-        )
-
-    def validate(self, data):
-        """
-        Добавляем валидацию бизнес-логики прямо в сериализатор.
-        Этот метод вызывается перед созданием или обновлением объекта.
-        """
-        related_habit = data.get('related_habit', getattr(self.instance, 'related_habit', None))
-        reward = data.get('reward', getattr(self.instance, 'reward', None))
-        is_pleasant = data.get('is_pleasant', getattr(self.instance, 'is_pleasant', None))
-        duration = data.get('duration', getattr(self.instance, 'duration', None))
-        periodicity = data.get('periodicity', getattr(self.instance, 'periodicity', None))
-
-        if related_habit and reward:
-            raise serializers.ValidationError('Нельзя одновременно указывать связанную привычку и вознаграждение.')
-
-        if duration and duration > 120:
-            raise serializers.ValidationError('Время выполнения не может превышать 120 секунд.')
-
-        if related_habit and not related_habit.is_pleasant:
-            raise serializers.ValidationError('В связанные привычки могут попадать только привычки с признаком "приятной".')
-
-        if is_pleasant and (reward or related_habit):
-            raise serializers.ValidationError('У приятной привычки не может быть вознаграждения или связанной привычки.')
-
-        if periodicity and periodicity > 7:
-            raise serializers.ValidationError('Периодичность не может быть реже, чем раз в 7 дней.')
-
-        return data
+        fields = '__all__'
+        validators = [
+            validate_reward_and_related_habit,
+            validate_related_habit_is_pleasant,
+            validate_pleasant_habit_has_no_reward_or_related,
+            validate_periodicity,
+        ]

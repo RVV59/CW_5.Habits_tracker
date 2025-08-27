@@ -1,7 +1,7 @@
 from django.db import models
 from django.conf import settings
 # Словарь для полей, которые могут быть пустыми в базе данных и в формах.
-# Удобно, чтобы не дублировать код.
+# Удобно, чтобы не дублировать код. Близнецы научили.
 NULLABLE = {'null': True, 'blank': True}
 
 
@@ -51,5 +51,4 @@ class Habit(models.Model):
     class Meta:
         verbose_name = 'Привычка'
         verbose_name_plural = 'Привычки'
-        # Добавим сортировку для более предсказуемого вывода
         ordering = ('pk',)

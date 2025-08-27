@@ -1,0 +1,9 @@
+    [run]
+    # Исключаем файлы, которые не нужно измерять
+    omit =
+        */migrations/*
+        */tests/*
+        */apps.py
+        */admin.py
+        config/*
+        manage.py

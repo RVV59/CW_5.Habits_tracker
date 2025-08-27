@@ -1,19 +1,15 @@
-# habits/views.py
-
 from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated # <-- Важно для безопасности
-
+from rest_framework.permissions import IsAuthenticated
 from .models import Habit
 from .serializers import HabitSerializer
-from .permissions import IsOwner # <-- Предполагаем, что у вас будет такой permission
+from .permissions import IsOwner
+
 
 class HabitViewSet(viewsets.ModelViewSet):
     """
     ViewSet для работы с привычками.
     """
     serializer_class = HabitSerializer
-    # Указываем права доступа: пользователь должен быть авторизован,
-    # а для редактирования/удаления - быть владельцем.
     permission_classes = [IsAuthenticated, IsOwner]
 
     def get_queryset(self):
@@ -30,4 +26,3 @@ class HabitViewSet(viewsets.ModelViewSet):
         Мы автоматически привязываем новую привычку к текущему пользователю.
         """
         serializer.save(user=self.request.user)
-
