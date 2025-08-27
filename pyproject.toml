@@ -20,6 +20,8 @@
     python-telegram-bot = "<21.0"
     eventlet = "^0.40.2"
     flake8 = "^7.3.0"
+    drf-yasg = "^1.21.10"
+    django-celery-beat = "^2.8.1"
 
     [tool.poetry.group.dev.dependencies]
     coverage = "^7.10.5"
