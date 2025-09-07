@@ -10,7 +10,7 @@ Dockerfile
 
 # Poetry
 .venv
-poetry.lock
+#poetry.lock
 
 # IDE
 .idea

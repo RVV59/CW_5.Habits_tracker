@@ -1,0 +1,84 @@
+services:
+  # Сервис базы данных PostgreSQL
+  db:
+    image: postgres:15-alpine  # Используем официальный образ PostgreSQL
+    container_name: habits_db
+    restart: always # Всегда перезапускать контейнер, если он остановился
+    volumes:
+      - pg_data:/var/lib/postgresql/data # Сохраняем данные БД между перезапусками
+    env_file:
+      - .env # Передаем переменные окружения из файла .env
+
+  # Сервис Redis для Celery
+  redis:
+    image: redis:7-alpine # Используем официальный образ Redis
+    container_name: habits_redis
+    restart: always
+
+  # Сервис нашего Django-приложения
+  app:
+    build: . # Собираем образ из Dockerfile в текущей директории
+    container_name: habits_app
+    restart: always
+    volumes:
+      - .:/app # Монтируем код проекта в контейнер для разработки
+      - static_volume:/app/static # Том для статических файлов
+      - media_volume:/app/media   # Том для медиа-файлов
+    env_file:
+      - .env
+    depends_on:
+      - db # Запускать только после того, как запустится база данных
+      - redis
+    # Команда для запуска. Сначала применяем миграции, потом запускаем Gunicorn.
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             gunicorn config.wsgi:application --bind 0.0.0.0:8000"
+
+  # Сервис Celery Worker
+  celery:
+    build: . # Используем тот же образ, что и для app
+    container_name: habits_celery
+    restart: always
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      - app
+      - redis
+    command: sh -c "celery -A config worker -l INFO"
+
+  # Сервис Celery Beat (планировщик)
+  celery-beat:
+    build: . # Используем тот же образ, что и для app
+    container_name: habits_celery_beat
+    restart: always
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      - app
+      - redis
+    command: sh -c "celery -A config beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler"
+
+  # Сервис Nginx (веб-сервер)
+  nginx:
+    image: nginx:latest
+    container_name: habits_nginx
+    restart: always
+    ports:
+      - "80:80" # Пробрасываем порт 80 контейнера на порт 80 нашего компьютера
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf # Конфигурационный файл Nginx
+      - static_volume:/app/static # Делаем доступной папку со статикой
+      - media_volume:/app/media   # Делаем доступной папку с медиа
+    depends_on:
+      - app
+
+# Определяем именованные тома для постоянного хранения данных
+volumes:
+  pg_data:
+  static_volume:
+  media_volume:
