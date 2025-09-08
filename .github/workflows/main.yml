@@ -1,0 +1,75 @@
+# C:/Users/Vlad/PycharmProjects/CW_5.Habits_tracker/.github/workflows/main.yml
+
+# Название нашего workflow, будет отображаться в GitHub
+name: Django CI/CD
+
+# Триггер: запускать этот workflow при каждом пуше в ветку 'main'
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  # Единственная задача (job) в нашем workflow, назовем ее 'deploy'
+  deploy:
+    # Указываем, что задача будет выполняться на виртуальной машине с последней версией Ubuntu
+    runs-on: ubuntu-latest
+
+    # Шаги, которые будут выполняться последовательно
+    steps:
+      # Шаг 1: Подключение к серверу и обновление кода
+      - name: Deploy to server
+        # Используем готовый action для удобного выполнения команд по SSH
+        uses: appleboy/ssh-action@master
+        with:
+          # IP-адрес вашего сервера (из секретов GitHub)
+          host: ${{ secrets.SERVER_HOST }}
+          # Имя пользователя на сервере (из секретов GitHub)
+          username: ${{ secrets.SERVER_USER }}
+          # Приватный SSH-ключ для доступа (из секретов GitHub)
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          # Скрипт, который будет выполнен на сервере
+          script: |
+            # Переходим в папку с проектом (если она уже есть) или клонируем репозиторий
+            if [ -d "CW_5.Habits_tracker" ]; then
+              cd CW_5.Habits_tracker
+              git pull
+            else
+              # ВАЖНО: Замените URL на URL вашего репозитория!
+              git clone https://github.com/RVV59/CW_5.Habits_tracker.git
+              cd CW_5.Habits_tracker
+            fi
+
+      # Шаг 2: Создание файла .env на сервере из секретов GitHub
+      - name: Create .env file
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # Переходим в папку проекта
+            cd CW_5.Habits_tracker
+            # Создаем .env файл, подставляя значения из секретов GitHub
+            echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" > .env
+            echo "DEBUG=False" >> .env # На продакшене DEBUG всегда False!
+            echo "ALLOWED_HOSTS=${{ secrets.ALLOWED_HOSTS }}" >> .env
+            echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> .env
+            echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
+            echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
+            echo "DB_HOST=db" >> .env
+            echo "DB_PORT=5432" >> .env
+            echo "REDIS_HOST=redis" >> .env
+            echo "REDIS_PORT=6379" >> .env
+            echo "TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}" >> .env
+
+      # Шаг 3: Запуск docker-compose на сервере
+      - name: Run docker-compose
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd CW_5.Habits_tracker # Переходим в папку проекта
+            # Собираем и запускаем контейнеры в фоновом режиме
+            docker-compose up --build -d
