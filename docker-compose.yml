@@ -1,13 +1,19 @@
 services:
   # Сервис базы данных PostgreSQL
   db:
-    image: postgres:15-alpine  # Используем официальный образ PostgreSQL
+    image: postgres:17-alpine  # Используем официальный образ PostgreSQL
     container_name: habits_db
     restart: always # Всегда перезапускать контейнер, если он остановился
     volumes:
       - pg_data:/var/lib/postgresql/data # Сохраняем данные БД между перезапусками
-    env_file:
-      - .env # Передаем переменные окружения из файла .env
+#    env_file:
+#      - .env # Передаем переменные окружения из файла .env
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    # env_file здесь больше не нужен, так как мы передали все явно
+    # -------------------------Sunday, September 7, 2025 9:54:16 PM
 
   # Сервис Redis для Celery
   redis:
@@ -30,11 +36,25 @@ services:
       - db # Запускать только после того, как запустится база данных
       - redis
     # Команда для запуска. Сначала применяем миграции, потом запускаем Gunicorn.
-    command: >
-      sh -c "python manage.py migrate &&
-             python manage.py collectstatic --noinput &&
-             gunicorn config.wsgi:application --bind 0.0.0.0:8000"
+#    command: >
+#      sh -c "python manage.py migrate &&
+#             python manage.py collectstatic --noinput &&
+#             gunicorn config.wsgi:application --bind 0.0.0.0:8000"
+    #Sunday, September 7, 2025 10:17:13 PM
+# docker-compose.yml (внутри сервиса app)
 
+    command: >
+      sh -c "
+        echo 'Waiting for database...'
+        while ! nc -z db 5432; do
+          sleep 0.1
+        done;
+        echo 'Database available!';
+
+        python manage.py migrate &&
+        python manage.py collectstatic --noinput &&
+        gunicorn config.wsgi:application --bind 0.0.0.0:8000
+      "
   # Сервис Celery Worker
   celery:
     build: . # Используем тот же образ, что и для app
