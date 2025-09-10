@@ -1,47 +1,34 @@
 services:
-  # Сервис базы данных PostgreSQL
   db:
-    image: postgres:17-alpine  # Используем официальный образ PostgreSQL
+    image: postgres:17-alpine
     container_name: habits_db
-    restart: always # Всегда перезапускать контейнер, если он остановился
+    restart: always
     volumes:
-      - pg_data:/var/lib/postgresql/data # Сохраняем данные БД между перезапусками
-#    env_file:
-#      - .env # Передаем переменные окружения из файла .env
+      - pg_data:/var/lib/postgresql/data
     environment:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-    # env_file здесь больше не нужен, так как мы передали все явно
-    # -------------------------Sunday, September 7, 2025 9:54:16 PM
 
-  # Сервис Redis для Celery
+
   redis:
-    image: redis:7-alpine # Используем официальный образ Redis
+    image: redis:7-alpine
     container_name: habits_redis
     restart: always
 
-  # Сервис нашего Django-приложения
   app:
-    build: . # Собираем образ из Dockerfile в текущей директории
+    build: .
     container_name: habits_app
     restart: always
     volumes:
-      - .:/app # Монтируем код проекта в контейнер для разработки
-      - static_volume:/app/static # Том для статических файлов
-      - media_volume:/app/media   # Том для медиа-файлов
+      - .:/app
+      - static_volume:/app/static
+      - media_volume:/app/media
     env_file:
       - .env
     depends_on:
-      - db # Запускать только после того, как запустится база данных
+      - db
       - redis
-    # Команда для запуска. Сначала применяем миграции, потом запускаем Gunicorn.
-#    command: >
-#      sh -c "python manage.py migrate &&
-#             python manage.py collectstatic --noinput &&
-#             gunicorn config.wsgi:application --bind 0.0.0.0:8000"
-    #Sunday, September 7, 2025 10:17:13 PM
-# docker-compose.yml (внутри сервиса app)
 
     command: >
       sh -c "
@@ -55,9 +42,8 @@ services:
         python manage.py collectstatic --noinput &&
         gunicorn config.wsgi:application --bind 0.0.0.0:8000
       "
-  # Сервис Celery Worker
   celery:
-    build: . # Используем тот же образ, что и для app
+    build: .
     container_name: habits_celery
     restart: always
     volumes:
@@ -65,11 +51,20 @@ services:
     env_file:
       - .env
     depends_on:
-      - app
+#      - app
+      - db # Sunday, September 7, 2025 10:33:37 PM
       - redis
-    command: sh -c "celery -A config worker -l INFO"
+#    command: sh -c "celery -A config worker -l INFO"
+    command: >
+      sh -c "
+        echo 'Celery Worker: Waiting for database...'
+        while ! nc -z db 5432; do
+          sleep 0.1
+        done;
+        echo 'Celery Worker: Database available!';
+        celery -A config worker -l INFO
+      "
 
-  # Сервис Celery Beat (планировщик)
   celery-beat:
     build: . # Используем тот же образ, что и для app
     container_name: habits_celery_beat
@@ -79,11 +74,19 @@ services:
     env_file:
       - .env
     depends_on:
-      - app
+#      - app
+      - db # Sunday, September 7, 2025 10:33:37 PM
       - redis
-    command: sh -c "celery -A config beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler"
-
-  # Сервис Nginx (веб-сервер)
+#    command: sh -c "celery -A config beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler"
+    command: >
+      sh -c "
+        echo 'Celery Beat: Waiting for database...'
+        while ! nc -z db 5432; do
+          sleep 0.1
+        done;
+        echo 'Celery Beat: Database available!';
+        celery -A config beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
+      "
   nginx:
     image: nginx:latest
     container_name: habits_nginx
@@ -97,7 +100,6 @@ services:
     depends_on:
       - app
 
-# Определяем именованные тома для постоянного хранения данных
 volumes:
   pg_data:
   static_volume:
