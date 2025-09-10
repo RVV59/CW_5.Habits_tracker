@@ -8,25 +8,32 @@ NULLABLE = {'blank': True, 'null': True}
 class UserManager(BaseUserManager):
     """
     Кастомный менеджер для модели User.
-    Переопределяет методы создания пользователя и суперпользователя,
-    чтобы они работали с email в качестве основного идентификатора.
     """
 
-    def create_user(self, email, password, **extra_fields):
+    def _create_user(self, email, password, **extra_fields):
         """
-        Создает и сохраняет пользователя с указанным email и паролем.
+        Приватный метод для создания и сохранения пользователя.
+        Является единым источником логики создания пользователя.
         """
         if not email:
             raise ValueError('Поле Email должно быть установлено')
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
-        user.set_password(password)
+        user.set_password(password)  # Правильно хеширует пароль
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email, password, **extra_fields):
+    def create_user(self, email, password=None, **extra_fields):
         """
-        Создает и сохраняет суперпользователя с указанным email и паролем.
+        Создает и сохраняет обычного пользователя.
+        """
+        extra_fields.setdefault('is_staff', False)
+        extra_fields.setdefault('is_superuser', False)
+        return self._create_user(email, password, **extra_fields)
+
+    def create_superuser(self, email, password=None, **extra_fields):
+        """
+        Создает и сохраняет суперпользователя.
         """
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
@@ -37,8 +44,8 @@ class UserManager(BaseUserManager):
         if extra_fields.get('is_superuser') is not True:
             raise ValueError('Суперпользователь должен иметь is_superuser=True.')
 
-        return self.create_user(email, password, **extra_fields)
-
+        # Теперь вызывает приватный метод, а не create_user
+        return self._create_user(email, password, **extra_fields)
 
 class User(AbstractUser):
     """
