@@ -12,28 +12,28 @@ python = ">=3.11,<4.0"
 # Django & DRF
 django = "~5.0"
 djangorestframework = "^3.15.1"
-djangorestframework-simplejwt = "^5.3.1" # ПЕРЕМЕЩЕНО ВНУТРЬ СЕКЦИИ
+djangorestframework-simplejwt = "^5.3.1"
 django-cors-headers = "^4.7.0"
 drf-yasg = "^1.21.10"
 
 # База данных и кэш
 psycopg = {extras = ["binary"], version = "^3.1.19"}
-redis = "^5.0.7" # Последняя стабильная версия Python-клиента
+redis = "^5.0.7"
 
 # Celery
-celery = "^5.4.0" # Последняя стабильная версия
+celery = "^5.4.0"
 django-celery-beat = "^2.8.1"
-eventlet = "^0.40.2" # Для Windows, но не помешает
+eventlet = "^0.40.2"
 
 # Сервер и утилиты
-gunicorn = "^22.0.0" # ПЕРЕМЕЩЕНО ВНУТРЬ СЕКЦИИ. Критически важно для запуска.
+gunicorn = "^22.0.0"
 python-dotenv = "^1.0.1"
 pillow = "^11.3.0"
 requests = "^2.32.5"
 python-telegram-bot = "<21.0"
+faker = "^37.6.0"
 
 [tool.poetry.group.dev.dependencies]
-faker = "^37.6.0"
 flake8 = "^7.3.0"
 coverage = "^7.10.5"
 

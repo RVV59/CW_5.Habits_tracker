@@ -1,4 +1,3 @@
-# Файл: .dockerignore
 
 # Git
 .git
@@ -6,24 +5,34 @@
 
 # Docker
 .dockerignore
-Dockerfile
+docker-compose.yml
+docker-compose.prod.yml
 
-# Виртуальное окружение
+# Секреты и локальные настройки
+.env
+.env.*
+*.env
+
+# Виртуальное окружение Python
 .venv
-venv
+venv/
+env/
+
+# Кэш и артефакты Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
 
 # Файлы IDE
 .idea/
 .vscode/
 
-# Кэш Python
-__pycache__/
-*.pyc
-*.pyo
+# Локальная база данных SQLite (если используется для тестов)
+*.sqlite3
+db.sqlite3
 
-# Файлы зависимостей (мы их копируем отдельно)
-# poetry.lock
-# pyproject.toml
-
-# Файлы окружения
-.env
+# Отчеты о тестировании и покрытии
+.pytest_cache/
+.coverage
+htmlcov/
