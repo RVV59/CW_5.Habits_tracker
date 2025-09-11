@@ -1,4 +1,3 @@
-
 from datetime import timedelta
 from rest_framework import serializers
 from habits.models import Habit
@@ -9,6 +8,7 @@ from habits.validators import (
     validate_pleasant_habit_has_no_reward_or_related,
     validate_periodicity
 )
+
 
 class IntegerDurationField(serializers.DurationField):
     """
@@ -23,6 +23,7 @@ class IntegerDurationField(serializers.DurationField):
     def to_internal_value(self, value):
         duration_timedelta = super().to_internal_value(value)
         return int(duration_timedelta.total_seconds())
+
 
 class HabitSerializer(serializers.ModelSerializer):
     """Сериализатор для модели Habit."""

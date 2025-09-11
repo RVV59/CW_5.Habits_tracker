@@ -47,6 +47,7 @@ class UserManager(BaseUserManager):
         # Теперь вызывает приватный метод, а не create_user
         return self._create_user(email, password, **extra_fields)
 
+
 class User(AbstractUser):
     """
     Модель пользователя.

@@ -1,8 +1,9 @@
 from celery import shared_task
 import requests
-from datetime import datetime, timedelta
+from datetime import datetime
 from django.conf import settings
 from .models import Habit
+
 
 @shared_task
 def send_telegram_notification(habit_id):
@@ -13,14 +14,15 @@ def send_telegram_notification(habit_id):
         habit = Habit.objects.get(id=habit_id)
         user = habit.user
         if user.chat_id:
-            message = f"Напоминание! Сегодня в {habit.time.strftime('%H:%M')} вам нужно выполнить привычку: {habit.action}. Место: {habit.place}."
+            message = (f"Напоминание! Сегодня в {habit.time.strftime('%H:%M')} вам нужно выполнить привычку:"
+                       f" {habit.action}. Место: {habit.place}.")
             url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendMessage"
             params = {
                 "chat_id": user.chat_id,
                 "text": message,
             }
             response = requests.get(url, params=params)
-            response.raise_for_status() # Проверка на ошибки HTTP
+            response.raise_for_status()
             print(f"Уведомление для привычки {habit.id} успешно отправлено пользователю {user.email}.")
         else:
             print(f"У пользователя {user.email} не указан chat_id.")
