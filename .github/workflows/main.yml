@@ -1,5 +1,3 @@
-# C:/Users/Vlad/PycharmProjects/CW_5.Habits_tracker/.github/workflows/main.yml
-
 name: Django CI/CD
 
 on: [push, pull_request]
