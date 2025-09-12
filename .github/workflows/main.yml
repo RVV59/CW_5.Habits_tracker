@@ -127,6 +127,7 @@ jobs:
             echo "REDIS_HOST=redis" >> .env
             echo "REDIS_PORT=6379" >> .env
             echo "TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}" >> .env
-
+            
+            docker compose down
             # 3. Пересобираем и перезапускаем контейнеры
             docker compose up --build -d
