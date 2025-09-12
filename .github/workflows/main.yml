@@ -38,7 +38,7 @@ jobs:
           POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         ports:
-          - 5432:5432 # Пробрасываем порт, чтобы Django мог подключиться
+          - 5432:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -73,8 +73,6 @@ jobs:
           DB_PORT: 5432
         run: poetry run python manage.py test
 
-  # --- Этап 3: Проверка сборки Docker-образа (остается без изменений) ---
-  # Dockerfile сам должен уметь работать с Poetry, этот шаг просто проверяет его
   build:
     needs: [ lint, tests ] # Запускается только после успешных тестов и линтинга
     runs-on: ubuntu-latest
@@ -98,7 +96,6 @@ jobs:
           push: true  # <-- Ключевой параметр: "ДА, публиковать образ"
           # 3. Имя (тег) вашего образа в Docker Hub
           tags: ${{ secrets.DOCKERHUB_USERNAME}}/habits-tracker-app:latest
-  # --- Этап 4: Развертывание на сервере (остается без изменений) ---
   # --- Этап 4: Развертывание на сервере ---
   deploy:
     needs: build
@@ -132,4 +129,4 @@ jobs:
             echo "TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}" >> .env
 
             # 3. Пересобираем и перезапускаем контейнеры
-            docker-compose up --build -d
+            docker compose up --build -d
