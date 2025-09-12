@@ -23,7 +23,7 @@ jobs:
 
       # --- КЛЮЧЕВОЕ ИЗМЕНЕНИЕ ---
       - name: Run linter with Poetry
-        run: poetry run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        run: poetry run flake8 .
 
   # --- Этап 2: Запуск тестов ---
   tests:
