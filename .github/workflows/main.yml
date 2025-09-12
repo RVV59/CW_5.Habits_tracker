@@ -28,6 +28,23 @@ jobs:
   # --- Этап 2: Запуск тестов ---
   tests:
     runs-on: ubuntu-latest
+    # 1. Запускаем сервис с PostgreSQL специально для этого шага
+    services:
+      postgres:
+        image: postgres:13  # Используем образ PostgreSQL
+        env:
+          # Задаем переменные для создания тестовой БД
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+        ports:
+          - 5432:5432 # Пробрасываем порт, чтобы Django мог подключиться
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
