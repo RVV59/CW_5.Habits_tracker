@@ -31,7 +31,7 @@ jobs:
     # 1. Запускаем сервис с PostgreSQL специально для этого шага
     services:
       postgres:
-        image: postgres:13  # Используем образ PostgreSQL
+        image: postgres:17  # Используем образ PostgreSQL
         env:
           # Задаем переменные для создания тестовой БД
           POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
