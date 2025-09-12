@@ -62,6 +62,15 @@ jobs:
 
       # --- КЛЮЧЕВОЕ ИЗМЕНЕНИЕ ---
       - name: Run tests with Poetry
+        env:
+          # Секреты из GitHub
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          # Важно: хост теперь '127.0.0.1', так как сервис postgres работает на той же машине
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
         run: poetry run python manage.py test
 
   # --- Этап 3: Проверка сборки Docker-образа (остается без изменений) ---
