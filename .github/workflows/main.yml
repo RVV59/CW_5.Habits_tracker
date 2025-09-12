@@ -97,7 +97,7 @@ jobs:
           file: ./Dockerfile
           push: true  # <-- Ключевой параметр: "ДА, публиковать образ"
           # 3. Имя (тег) вашего образа в Docker Hub
-          tags: ${{ secrets.DOCKERHUB_USERNAME
+          tags: ${{ secrets.DOCKERHUB_USERNAME}}/habits-tracker-app:latest
   # --- Этап 4: Развертывание на сервере (остается без изменений) ---
   # --- Этап 4: Развертывание на сервере ---
   deploy:
