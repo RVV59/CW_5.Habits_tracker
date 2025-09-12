@@ -146,5 +146,5 @@ __pycache__
 sqlite
 .env
 celerybeat*
-.flake8
+#.flake8
 .coveragerc
