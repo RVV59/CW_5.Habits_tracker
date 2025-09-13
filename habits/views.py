@@ -29,13 +29,14 @@ class HabitViewSet(viewsets.ModelViewSet):
         """
         serializer.save(user=self.request.user)
 
+
 class PublicHabitListAPIView(generics.ListAPIView):
     """
     Контроллер для просмотра списка публичных привычек.
     Доступен всем пользователям (даже неавторизованным).
     """
     serializer_class = HabitSerializer
-    permission_classes = [AllowAny] # Разрешаем доступ всем
+    permission_classes = [AllowAny]
 
     def get_queryset(self):
         """

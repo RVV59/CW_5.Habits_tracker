@@ -1,0 +1,133 @@
+name: Django CI/CD
+
+on: [push, pull_request]
+
+jobs:
+  # --- Этап 1: Проверка качества кода (Линтинг) ---
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      # --- КЛЮЧЕВОЕ ИЗМЕНЕНИЕ ---
+      - name: Install dependencies with Poetry
+        run: |
+          pip install poetry
+          poetry install
+
+      # --- КЛЮЧЕВОЕ ИЗМЕНЕНИЕ ---
+      - name: Run linter with Poetry
+        run: poetry run flake8 .
+
+  # --- Этап 2: Запуск тестов ---
+  tests:
+    runs-on: ubuntu-latest
+    # 1. Запускаем сервис с PostgreSQL специально для этого шага
+    services:
+      postgres:
+        image: postgres:17  # Используем образ PostgreSQL
+        env:
+          # Задаем переменные для создания тестовой БД
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      # --- КЛЮЧЕВОЕ ИЗМЕНЕНИЕ ---
+      - name: Install dependencies with Poetry
+        run: |
+          pip install poetry
+          poetry install
+
+      # --- КЛЮЧЕВОЕ ИЗМЕНЕНИЕ ---
+      - name: Run tests with Poetry
+        env:
+          # Секреты из GitHub
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          # Важно: хост теперь '127.0.0.1', так как сервис postgres работает на той же машине
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+        run: poetry run python manage.py test
+
+  build:
+    needs: [ lint, tests ] # Запускается только после успешных тестов и линтинга
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 1. Шаг входа в Docker Hub
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }} # Использует ваш логин из секретов
+          password: ${{ secrets.DOCKERHUB_TOKEN }}    # Использует ваш токен доступа из секретов
+
+      # 2. Шаг сборки и публикации образа
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true  # <-- Ключевой параметр: "ДА, публиковать образ"
+          # 3. Имя (тег) вашего образа в Docker Hub
+          tags: ${{ secrets.DOCKERHUB_USERNAME}}/habits-tracker-app:latest
+  # --- Этап 4: Развертывание на сервере ---
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+#    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    steps:
+      - name: Deploy to server and run application
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # Переходим в директорию проекта
+            cd CW_5.Habits_tracker
+
+            # 1. Обновляем код из репозитория
+            git pull
+
+            # 2. Динамически создаем .env файл
+            echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" > .env
+            echo "DEBUG=False" >> .env
+            echo "ALLOWED_HOSTS=${{ secrets.ALLOWED_HOSTS }}" >> .env
+            echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> .env
+            echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
+            echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
+            echo "DB_HOST=db" >> .env
+            echo "DB_PORT=5432" >> .env
+            echo "REDIS_HOST=redis" >> .env
+            echo "REDIS_PORT=6379" >> .env
+            echo "TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}" >> .env
+            
+            docker compose down
+            # 3. Пересобираем и перезапускаем контейнеры
+            docker compose up --build -d

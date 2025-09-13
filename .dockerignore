@@ -1,0 +1,38 @@
+
+# Git
+.git
+.gitignore
+
+# Docker
+.dockerignore
+docker-compose.yml
+docker-compose.prod.yml
+
+# Секреты и локальные настройки
+.env
+.env.*
+*.env
+
+# Виртуальное окружение Python
+.venv
+venv/
+env/
+
+# Кэш и артефакты Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Файлы IDE
+.idea/
+.vscode/
+
+# Локальная база данных SQLite (если используется для тестов)
+*.sqlite3
+db.sqlite3
+
+# Отчеты о тестировании и покрытии
+.pytest_cache/
+.coverage
+htmlcov/

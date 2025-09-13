@@ -1,16 +1,13 @@
-from rest_framework.permissions import BasePermission, SAFE_METHODS
+from rest_framework.permissions import BasePermission
 
 
 class IsOwner(BasePermission):
     """
-    Кастомное правило доступа.
-    Разрешает полный доступ владельцу объекта.
-    Разрешает безопасные методы (GET, HEAD, OPTIONS) всем остальным.
+    Права доступа, которые позволяют редактировать объект только его владельцу.
     """
     def has_object_permission(self, request, view, obj):
-        # Разрешаем GET, HEAD, OPTIONS запросы всем
-        if request.method in SAFE_METHODS:
-            return True
-
-        # Разрешаем запись (PUT, PATCH, DELETE) только владельцу объекта
-        return obj == request.user
+        # Если модель - это сам User, сравниваем напрямую
+        if isinstance(obj, request.user.__class__):
+            return obj == request.user
+        # Для остальных моделей (например, Habit) ищем поле 'user'
+        return obj.user == request.use
